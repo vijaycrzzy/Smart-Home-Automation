@@ -1,0 +1,152 @@
+#include<LiquidCrystal.h>
+#include<Keypad.h>
+#include<Servo.h>
+LiquidCrystal lcd(8,9,10,11,12,13);
+Servo myservo;
+
+int h=12,m,s,flag;
+float val,rem;
+int sen;
+int smo;
+
+const byte rows=4;
+const byte cols=4;
+
+char keys[rows][cols]= {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+  
+  byte rowpins[rows]={0,1,2,3};
+  byte colpins[cols]={4,5,6,7};
+  String password="";
+  
+Keypad keypad= Keypad(makeKeymap(keys),rowpins,colpins,rows,cols);
+void setup()
+{ Serial.begin(9600);
+  lcd.begin(16,2);
+  pinMode(A1,OUTPUT);
+  pinMode(A0,INPUT); //Temp Sensor
+  pinMode(A3,OUTPUT); // Photo Controlled LED
+  pinMode(8,INPUT); //Gas Sensor
+  pinMode(A4,OUTPUT); //Buzzar
+  pinMode(A5,INPUT); // Photoresistor
+}
+void loop()
+{ 
+ 
+  smo=analogRead(A2);           // Smoke Alarm
+  if(smo>130)
+  {
+    digitalWrite(A4,HIGH);
+    delay(100);
+  }
+  if(smo<129)
+  { 
+    digitalWrite(A4,LOW);
+    delay(100);
+
+  }
+  char key=keypad.getKey();
+  if(key!=NO_KEY)
+  {
+    password=password+key;
+   
+    if(key=='A')
+    {
+      Serial.println("Enter Password");
+      password="";
+      delay(1000);
+    }
+    if(key=='D')
+    {
+      if(password=="123D")
+      {
+        Serial.println("Unlocked");
+          delay(1000);
+     
+
+      }
+      else
+      {
+        Serial.println("Locked");
+        delay(1000);
+      
+      }
+    }
+    }
+  
+  if(password=="123D")
+  {
+  digitalWrite(A1,HIGH);
+  lcd.print(h);            //Clock
+  lcd.print(":");
+  lcd.print(m);
+  lcd.print(":");
+  lcd.print(s);
+  lcd.print(" ");
+  if(flag=12) lcd.print("PM");
+  if(flag>12) lcd.print("PM");
+  if(flag<12) lcd.print("AM");
+  
+  s=s+1;
+  if(s==60)
+  {
+   s=0;
+   m=m+1;
+  }
+  if(m==60)
+  {
+    h=h+1;
+    flag=flag+1;
+  }
+  if(h==13)
+  {
+    h=1;
+  }
+  
+  lcd.setCursor(0,1);              //Weather
+  if(rem>25&&rem<30)
+  lcd.print("MORNING");
+  if(rem>30&&rem<40)
+  lcd.print("EVENING");
+  if(rem>20&&rem<25)
+  lcd.print("NIGHT");
+  lcd.print(" ");
+  val=analogRead(A0)*(5.0/1023.0);
+  rem=(val-0.5)*100;
+  lcd.print(rem);
+  lcd.print(" C");
+  delay(1000);
+  lcd.clear();
+  
+  sen=analogRead(A5);            //Photoresistor Controlled LED
+  if(sen>520)
+  {
+    digitalWrite(A3,HIGH);
+    lcd.print("LED IS ON");
+  }
+    else
+    {
+      digitalWrite(A3,LOW);
+      lcd.print("LED IS OFF");
+    }
+    
+       lcd.setCursor(0,1);
+ 
+                        // Smoke Alarm
+  if(smo>130)
+  { lcd.print("Smoke Detected");
+    delay(1000);
+    lcd.clear();
+  }
+  else
+  { lcd.print("No Smoke");
+    delay(1000);
+    lcd.clear();
+  }
+ 
+  }
+}
